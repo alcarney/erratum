@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def readme():
@@ -6,10 +6,10 @@ def readme():
         return f.read()
 
 
-exec(open("errors/version.py", 'r').read())
+exec(open("erratum/version.py", 'r').read())
 
 
-setup(name="errors",
+setup(name="erratum",
       version=__version__,
       description="User friendly errors",
       long_description=readme(),
@@ -21,16 +21,16 @@ setup(name="errors",
           'Programming Language :: Python :: 3 :: Only',
           'Topic :: Documentation',
           'Topic :: Documentation :: Sphinx',
-          'Topic :: Software Development:: Documentation'
+          'Topic :: Software Development :: Documentation'
       ],
       author="Alex Carney",
       author_email="alcarneyme@gmail.com",
       license='MIT',
-      packages=['errors'],
+      packages=find_packages(exclude="tests"),
       python_requires='>=3.0',
       entry_points={
           'console_scripts': [
-              'errors.document = errors.document:main'
+              'erratum.document = erratum.document:main'
           ]
       },
       zip_safe=False)
