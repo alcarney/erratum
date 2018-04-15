@@ -1,7 +1,7 @@
 from functools import wraps
 
 
-class Annotater:
+class Annotator:
     """Annotates exception messages with a URL so users can find out more
     about the particular error.
     """
@@ -18,7 +18,6 @@ class Annotater:
             return
 
         args = err.args
-        print(len(args))
 
         if len(args) == 0:
             new_args = tuple([self.url])
@@ -50,7 +49,7 @@ class Error:
             @wraps(f)
             def wrapper(*args, **kwargs):
 
-                with Annotater(cls.url):
+                with Annotator(cls.url):
                     return f(*args, **kwargs)
 
             return wrapper
