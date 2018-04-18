@@ -6,6 +6,16 @@ Errors
 
     * - code
       - |travis| |coveralls|
+    * - pypi
+      - |version| |py-supported|
+
+.. |version| image:: https://img.shields.io/pypi/v/erratum.svg
+    :alt: PyPI Package latest release
+    :target: https://pypi.python.org/pypi/erratum
+
+.. |py-supported| image:: https://img.shields.io/pypi/pyversions/erratum.svg
+    :alt: Supported versions
+    :target: https://pypi.python.org/pypi/erratum
 
 .. |travis| image:: https://travis-ci.org/alcarney/erratum.svg?branch=dev
     :target: https://travis-ci.org/alcarney/erratum
