@@ -5,3 +5,7 @@ __pycache__
 dist
 .hypothesis
 .pytest_cache
+.coverage
+.tox
+*.ipynb
+.eggs

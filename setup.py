@@ -33,4 +33,11 @@ setup(name="erratum",
               'erratum.document = erratum.document:main'
           ]
       },
+      tests_require = [
+          'pytest',
+          'pytest-cov',
+          'hypothesis'
+      ],
+      setup_requires=['pytest-runner'],
+      test_suite="tests",
       zip_safe=False)

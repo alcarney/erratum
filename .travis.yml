@@ -1,0 +1,24 @@
+language: python
+matrix:
+  include:
+    - python: "3.4"
+      env: TASK=py34
+
+    - python: "3.5"
+      env: TASK=py35
+
+    - python: "3.6"
+      env: TASK=py36
+
+before_install:
+  - "pip install pipenv coveralls"
+
+install:
+  - "pipenv install --dev"
+  - "pipenv install -e ."
+
+script:
+  - "tox -e $task"
+
+after_success:
+  - if [ "$TASK" == "py36" ]; then coveralls; fi

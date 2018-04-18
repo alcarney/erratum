@@ -8,9 +8,10 @@ import argparse
 
 from string import Template
 from importlib import import_module
-from inspect import getmembers, isclass
+from inspect import getmembers, isclass, getdoc
 from pkgutil import iter_modules
 
+from .format import format_header, get_title
 from .error import Error
 
 
@@ -23,8 +24,8 @@ class DocumentErrors:
     def format_entry(self, err_name, err_def):
 
         fragments = {}
-        fragments['title'] = err_name + "\n" + "="*len(err_name)
-        fragments['desc'] = err_def.__doc__
+        fragments['title'] = format_header(err_name, '-')
+        fragments['desc'] = getdoc(err_def)
 
         return self.entry_template.substitute(**fragments)
 
@@ -32,12 +33,17 @@ class DocumentErrors:
         """Given error definitions, write the documentation."""
 
         self.logger.debug("Writing documentation to: {}".format(path))
+        title = get_title(path)
+
         with open(path, 'w') as f:
+
+            # Write the title
+            f.write(format_header(title, "=") + "\n\n")
 
             for err_name, err_def in errors.items():
                 f.write(self.format_entry(err_name, err_def))
 
-    def find_errors(self, modules):
+    def find_errors(self, modules, inc_err):
         """Given a module, find all the error definitions inside."""
 
         errors = {}
@@ -52,6 +58,9 @@ class DocumentErrors:
             for err in getmembers(module, error_filter):
                 err_name = err[0]
                 err_def = err[1]
+
+                if err_name == "Error" and not inc_err:
+                    continue
 
                 if err_name not in errors:
                     errors[err_name] = err_def
@@ -96,18 +105,24 @@ class DocumentErrors:
 
         return modules
 
-    def run(self, package, path):
+    def run(self, package, path, inc_err):
         """Given the python package to document find all the error definitions
         and write the documentation.
 
-        :param package:
+        :param package: The package to document.
+        :param path: The path to write the documentation to.
+        :param inc_err: Flag to indicate if the base Error class should be
+                        included in the output.
+
         :type package: str
+        :type path: str:
+        :type inc_err: bool
         """
         self.logger.debug("Documenting errors declared " +
                           "in [{}] and all submodules.".format(package))
 
         modules = self.find_modules(package)
-        errors = self.find_errors(modules)
+        errors = self.find_errors(modules, inc_err)
         self.write_documentation(errors, path)
 
 
@@ -126,10 +141,17 @@ def configure_argparser():
 
     description = "Document the errors defined in a python package"
     parser = argparse.ArgumentParser(description=description)
+
     parser.add_argument("package",
                         help="The name of the package to document.")
+
     parser.add_argument('-v --verbose', dest='debug', action='store_true',
                         help="Enable verbose output (for debugging purposes)")
+
+    parser.add_argument("-i, --include-error", action="store_true",
+                        dest="inc_err",
+                        help="Include the base Error class in the output.")
+
     parser.add_argument("-o, --output", type=str, dest="output",
                         help="The file to write the documentation to")
 
@@ -159,7 +181,7 @@ def main():
     entry_template = Template(ENTRY_TEMPLATE)
 
     command = DocumentErrors(logger, entry_template)
-    command.run(args.package, path)
+    command.run(args.package, path, args.inc_err)
 
 
 if __name__ == '__main__':

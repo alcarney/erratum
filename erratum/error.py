@@ -44,12 +44,14 @@ class Error:
     @classmethod
     def annotate(cls):
 
+        url = cls.url + '#' + cls.__name__.lower()
+
         def decorator(f):
 
             @wraps(f)
             def wrapper(*args, **kwargs):
 
-                with Annotator(cls.url):
+                with Annotator(url):
                     return f(*args, **kwargs)
 
             return wrapper
