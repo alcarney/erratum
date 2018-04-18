@@ -11,7 +11,7 @@ matrix:
       env: TASK=py36
 
 before_install:
-  - "pip install coveralls"
+  - "pip install coveralls tox"
 
 script:
   - "tox -e $TASK"
