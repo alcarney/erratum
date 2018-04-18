@@ -11,14 +11,10 @@ matrix:
       env: TASK=py36
 
 before_install:
-  - "pip install pipenv coveralls"
-
-install:
-  - "pipenv install --dev"
-  - "pipenv install -e ."
+  - "pip install coveralls"
 
 script:
-  - "tox -e $task"
+  - "tox -e $TASK"
 
 after_success:
   - if [ "$TASK" == "py36" ]; then coveralls; fi
