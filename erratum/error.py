@@ -26,7 +26,7 @@ class Annotator:
             new_args = tuple(["{}\n{}".format(args[0], self.url)])
 
         if len(args) > 1:
-            new_args = tuple([*args, self.url])
+            new_args = tuple(args + [self.url])
 
         err.args = new_args
 
