@@ -1,6 +1,18 @@
 Errors
 ======
 
+.. list-table::
+    :stub-columns: 1
+
+    * - code
+      - |travis| |coveralls|
+
+.. |travis| image:: https://travis-ci.org/alcarney/erratum.svg?branch=dev
+    :target: https://travis-ci.org/alcarney/erratum
+
+.. |coveralls| image:: https://coveralls.io/repos/github/alcarney/erratum/badge.svg?branch=dev
+    :target: https://coveralls.io/github/alcarney/erratum?branch=dev
+
 Errors is a python package that aims to make it easy to build in user friendly
 error messages into your project. Let's look at the following example:
 
