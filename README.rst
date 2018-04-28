@@ -53,7 +53,7 @@ How? Well let's look at the implementation of :code:`my_square_root`
     class SqrtError(Error):
         url = "https://github.com/alcarney/erratum"
 
-    @SqrtError.annotate()
+    @SqrtError
     def my_square_root(n):
 
         if n < 0:
