@@ -2,20 +2,20 @@ import pytest
 from pytest import raises
 from unittest import TestCase
 
-from erratum.error import Error
+from erratum.error import Error, is_error
 
 
 @pytest.mark.error
 class TestError(TestCase):
     """Tests relating to the Error class."""
 
-    def test_annotate_wraps(self):
-        """Check that the annotate method wraps functions."""
+    def test_wraps(self):
+        """Check that an error wraps functions."""
 
         class MyError(Error):
             pass
 
-        @MyError.annotate()
+        @MyError
         def my_function(a, b, c):
             """A docstring."""
             return a + b + c
@@ -25,12 +25,12 @@ class TestError(TestCase):
         assert my_function(1, 2, 3) == 6
 
     def test_annotate_errs(self):
-        """Check that the annotate method annotates error messages."""
+        """Check that an error annotates error messages."""
 
         class MyError(Error):
             url = "https://my-docs.com"
 
-        @MyError.annotate()
+        @MyError
         def my_function(a, b, c):
             raise TypeError("This is wrong.")
 
@@ -39,3 +39,17 @@ class TestError(TestCase):
 
         assert "This is wrong" in err.value.args[0]
         assert "https://my-docs.com" in err.value.args[0]
+
+    def test_is_error(self):
+        """Check that is_error only identfies the error definitions"""
+
+        class MyError(Error):
+            pass
+
+        @MyError
+        def func(x):
+            return x + 1
+
+        assert is_error(Error)
+        assert is_error(MyError)
+        assert not is_error(func)
