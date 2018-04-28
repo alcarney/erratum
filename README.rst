@@ -1,7 +1,29 @@
-Errors
-======
+Erratum
+=======
 
-Errors is a python package that aims to make it easy to build in user friendly
+.. list-table::
+    :stub-columns: 1
+
+    * - code
+      - |travis| |coveralls|
+    * - pypi
+      - |version| |py-supported|
+
+.. |version| image:: https://img.shields.io/pypi/v/erratum.svg
+    :alt: PyPI Package latest release
+    :target: https://pypi.python.org/pypi/erratum
+
+.. |py-supported| image:: https://img.shields.io/pypi/pyversions/erratum.svg
+    :alt: Supported versions
+    :target: https://pypi.python.org/pypi/erratum
+
+.. |travis| image:: https://travis-ci.org/alcarney/erratum.svg?branch=dev
+    :target: https://travis-ci.org/alcarney/erratum
+
+.. |coveralls| image:: https://coveralls.io/repos/github/alcarney/erratum/badge.svg?branch=dev
+    :target: https://coveralls.io/github/alcarney/erratum?branch=dev
+
+Erratum is a python package that aims to make it easy to build in user friendly
 error messages into your project. Let's look at the following example:
 
 .. code-block:: python
@@ -15,7 +37,7 @@ error messages into your project. Let's look at the following example:
           9     return math.sqrt(n)
 
     ValueError: You can only take the square root of a positive number
-    More info --> https://github.com/alcarney/errors
+    More info --> https://github.com/alcarney/erratum
 
 As you can see we get the error message as passed to the exception but we also get
 a link to a webpage where we can find more information about the error and what
@@ -26,12 +48,12 @@ How? Well let's look at the implementation of :code:`my_square_root`
 .. code-block:: python
 
     import math
-    from errors import Error
+    from erratum import Error
 
     class SqrtError(Error):
-        url = "https://github.com/alcarney/errors"
+        url = "https://github.com/alcarney/erratum"
 
-    @SqrtError.annotate()
+    @SqrtError
     def my_square_root(n):
 
         if n < 0:

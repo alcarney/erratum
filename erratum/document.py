@@ -1,6 +1,6 @@
-"""This module defines a script that can be run against a project, it will detect
-any :code:`Error` definitions and automatically write the troubleshooting page
-for you.
+"""This module defines a script that can be run against a project, it will
+detect any :code:`Error` definitions and automatically write the
+troubleshooting page for you.
 """
 import sys
 import logging
@@ -8,122 +8,103 @@ import argparse
 
 from string import Template
 from importlib import import_module
-from inspect import getmembers, isclass, getdoc
 from pkgutil import iter_modules
 
-from .format import format_header, get_title
-from .error import Error
+from .format import format_header, get_title, build_entry, apply_template
+from .error import find_errors
 
 
-class DocumentErrors:
+LOGGER = logging.getLogger(__name__)
 
-    def __init__(self, logger, entry_template):
-        self.logger = logger
-        self.entry_template = entry_template
 
-    def format_entry(self, err_name, err_def):
+ENTRY_TEMPLATE = """
+$title
 
-        fragments = {}
-        fragments['title'] = format_header(err_name, '-')
-        fragments['desc'] = getdoc(err_def)
+$desc
+"""
 
-        return self.entry_template.substitute(**fragments)
 
-    def write_documentation(self, errors, path):
-        """Given error definitions, write the documentation."""
+def write_documentation(errors, path):
+    """Given error definitions, write the documentation."""
 
-        self.logger.debug("Writing documentation to: {}".format(path))
-        title = get_title(path)
+    LOGGER.debug("Writing documentation to: {}".format(path))
+    title = get_title(path)
 
-        with open(path, 'w') as f:
+    with open(path, 'w') as f:
 
-            # Write the title
-            f.write(format_header(title, "=") + "\n\n")
+        # Write the title
+        f.write(format_header(title, "=") + "\n\n")
 
-            for err_name, err_def in errors.items():
-                f.write(self.format_entry(err_name, err_def))
+        for definition in errors.values():
 
-    def find_errors(self, modules, inc_err):
-        """Given a module, find all the error definitions inside."""
+            entry = build_entry(definition)
+            f.write(apply_template(ENTRY_TEMPLATE, entry))
 
-        errors = {}
-        self.logger.debug("Searching for Error definitions.")
 
-        # This is what defines an error definition
-        error_filter = lambda o: isclass(o) and issubclass(o, (Error,))
+def find_modules(package):
+    """Given the package name, find all submodules."""
 
-        for module in modules:
-            self.logger.debug("\t{}".format(module.__name__))
+    LOGGER.debug("Importing {}.".format(package))
 
-            for err in getmembers(module, error_filter):
-                err_name = err[0]
-                err_def = err[1]
+    try:
+        parent_module = import_module(package)
+    except ModuleNotFoundError:
+        LOGGER.error("Fatal: module [{}] not found.".format(package))
+        sys.exit(1)
 
-                if err_name == "Error" and not inc_err:
-                    continue
+    LOGGER.debug("Looking for submodules.")
+    path, name = parent_module.__path__, parent_module.__name__
 
-                if err_name not in errors:
-                    errors[err_name] = err_def
-                    self.logger.debug("\t\t-> {}".format(err_name))
+    modules = [parent_module]
+    mod_names = []
 
-        self.logger.debug("Found {} Error Definitions.".format(len(errors)))
-        return errors
+    for p in iter_modules(path, name + '.'):
+        mod_name = "{}".format(p.name)
+        mod_names.append(mod_name)
+        LOGGER.debug("\t-> {}".format(mod_name))
 
-    def find_modules(self, package):
-        """Given the package name, find all submodules."""
+    LOGGER.debug("Found {} submodules.".format(len(mod_names)))
+    modules += import_modules(mod_names)
+    return modules
 
-        self.logger.debug("Importing {}.".format(package))
+
+def import_modules(names):
+    """Given a list of module names, import them."""
+
+    modules = []
+    LOGGER.debug("Importing modules")
+
+    for mname in names:
 
         try:
-            parent_module = import_module(package)
+            modules.append(import_module(mname))
+            LOGGER.debug("\t-> {}".format(mname))
         except ModuleNotFoundError:
-            self.logger.info("Fatal: module [{}] not found.".format(package))
+            LOGGER.error("Unable to import [{}]".format(mname))
             sys.exit(1)
 
-        self.logger.debug("Looking for submodules.")
-        path, name = parent_module.__path__, parent_module.__name__
+    return modules
 
-        modules = [parent_module]
-        mod_names = []
 
-        for p in iter_modules(path, name + '.'):
-            mod_name = "{}".format(p.name)
-            mod_names.append(mod_name)
-            self.logger.debug("\t-> {}".format(mod_name))
+def run(package, path, inc_err):
+    """Given the python package to document find all the error definitions
+    and write the documentation.
 
-        self.logger.debug("Found {} submodules.".format(len(mod_names)))
-        self.logger.debug("Importing modules")
+    :param package: The package to document.
+    :param path: The path to write the documentation to.
+    :param inc_err: Flag to indicate if the base Error class should be
+                    included in the output.
 
-        for mname in mod_names:
+    :type package: str
+    :type path: str:
+    :type inc_err: bool
+    """
+    LOGGER.debug("Documenting errors declared " +
+                 "in [{}] and all submodules.".format(package))
 
-            try:
-                modules.append(import_module(mname))
-                self.logger.debug("\t-> {}".format(mname))
-            except ModuleNotFoundError:
-                self.logger.info("Unable to import [{}]".format(mname))
-                sys.exit(1)
-
-        return modules
-
-    def run(self, package, path, inc_err):
-        """Given the python package to document find all the error definitions
-        and write the documentation.
-
-        :param package: The package to document.
-        :param path: The path to write the documentation to.
-        :param inc_err: Flag to indicate if the base Error class should be
-                        included in the output.
-
-        :type package: str
-        :type path: str:
-        :type inc_err: bool
-        """
-        self.logger.debug("Documenting errors declared " +
-                          "in [{}] and all submodules.".format(package))
-
-        modules = self.find_modules(package)
-        errors = self.find_errors(modules, inc_err)
-        self.write_documentation(errors, path)
+    modules = find_modules(package)
+    errors = find_errors(modules, inc_err)
+    write_documentation(errors, path)
 
 
 def configure_logging(debug=False):
@@ -133,10 +114,9 @@ def configure_logging(debug=False):
     level = logging.DEBUG if debug else logging.INFO
 
     logging.basicConfig(format=fmtstr, level=level)
-    return logging.getLogger("errors.document")
 
 
-def configure_argparser():
+def configure_args():
     """Configure the argument parser."""
 
     description = "Document the errors defined in a python package"
@@ -158,32 +138,16 @@ def configure_argparser():
     return parser
 
 
-ENTRY_TEMPLATE="""
-$title
-
-$desc
-"""
-
-
 def main():
 
-    parser = configure_argparser()
-    args = parser.parse_args()
+    args = configure_args().parse_args()
+    path = "troubleshooting.rst" if not args.output else args.output
 
-    if args.output is None:
-        path = "troubleshooting.rst"
-    else:
-        path = args.output
+    configure_logging(args.debug)
+    LOGGER.debug("Starting.")
 
-    logger = configure_logging(args.debug)
-    logger.debug("Starting.")
-
-    entry_template = Template(ENTRY_TEMPLATE)
-
-    command = DocumentErrors(logger, entry_template)
-    command.run(args.package, path, args.inc_err)
+    run(args.package, path, args.inc_err)
 
 
 if __name__ == '__main__':
     main()
-
