@@ -1,39 +1,8 @@
 import logging
-from functools import wraps
 from inspect import isclass, getmembers
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-class Annotator:
-    """Annotates exception messages with a URL so users can find out more
-    about the particular error.
-    """
-
-    def __init__(self, url):
-        self.url = "More info --> " + url
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, err_type, err, traceback):
-
-        if err is None:
-            return
-
-        args = err.args
-
-        if len(args) == 0:
-            new_args = tuple([self.url])
-
-        if len(args) == 1:
-            new_args = tuple(["{}\n{}".format(args[0], self.url)])
-
-        if len(args) > 1:
-            new_args = tuple(args + [self.url])
-
-        err.args = new_args
 
 
 class Error:
@@ -46,21 +15,50 @@ class Error:
 
     url = ""
 
-    def __init__(self, f):
+    def __init__(self, f=None):
 
-        url = self.url + self.__class__.__name__.lower()
-        self.__doc__ = f.__doc__
-        self.__name__ = f.__name__
+        parts = {}
+        parts['url'] = self.url
+        parts['name'] = self.__class__.__name__.lower()
 
-        def wrapper(*args, **kwargs):
+        self._url = "More info --> {url}#{name}".format(**parts)
 
-            with Annotator(url):
-                return f(*args, **kwargs)
+        if f is not None:
+            self.__doc__ = f.__doc__
+            self.__name__ = f.__name__
 
-        self._f = wrapper
+            def wrapper(*args, **kwargs):
+
+                with self:
+                    return f(*args, **kwargs)
+
+            self._f = wrapper
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, err_type, err, traceback):
+
+        if err is None:
+            return
+
+        args = err.args
+
+        if len(args) == 0:
+            new_args = tuple([self._url])
+
+        if len(args) == 1:
+            new_args = tuple(["{}\n{}".format(args[0], self._url)])
+
+        if len(args) > 1:
+            new_args = tuple(args + (self._url,))
+
+        err.args = new_args
 
     def __call__(self, *args, **kwargs):
-        return self._f(*args, **kwargs)
+
+        if self._f is not None:
+            return self._f(*args, **kwargs)
 
 
 def is_error(obj):
