@@ -1,3 +1,15 @@
+v0.1.1 - 29/04/18
+-----------------
+
+- **NEW:** Error definitions can also be used as a context manager, useful
+  for when you only want the Error to catch exceptions in a particular block
+  of code rather than an entire function. e.g.
+
+  .. code-block:: python
+
+      with SqrtError():
+	      math.sqrt(-1)
+
 v0.1.0 - 28/04/18
 -----------------
 
